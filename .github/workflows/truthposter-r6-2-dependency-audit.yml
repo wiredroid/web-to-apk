@@ -1,0 +1,51 @@
+name: TruthPoster R6.2 Dependency Advisory Audit
+on:
+  push:
+    branches: [truthposter-r6-2-dependency-audit]
+  pull_request:
+    branches: [master]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - name: Install pinned auditor
+        run: python -m pip install --disable-pip-version-check pip-audit==2.10.1
+      - name: Audit exact pinned runtime list
+        run: |
+          set +e
+          python -m pip_audit -r truthposter-r6-2-requirements.lock --no-deps --format json --output TruthPoster_R6_2_PIP_AUDIT.json
+          echo $? > TruthPoster_R6_2_PIP_AUDIT.exit-code
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          p=Path('TruthPoster_R6_2_PIP_AUDIT.json')
+          data=json.loads(p.read_text()) if p.exists() else {}
+          deps=data.get('dependencies', data if isinstance(data,list) else [])
+          vulnerabilities=[]
+          for dep in deps:
+              for vuln in dep.get('vulns', []):
+                  vulnerabilities.append({'package':dep.get('name'),'version':dep.get('version'),**vuln})
+          summary={'dependency_count':len(deps),'vulnerability_count':len(vulnerabilities),'vulnerabilities':vulnerabilities}
+          Path('TruthPoster_R6_2_PIP_AUDIT_SUMMARY.json').write_text(json.dumps(summary,indent=2)+'\n')
+          print(json.dumps(summary,indent=2))
+          PY
+      - name: Upload machine-readable result
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: TruthPoster-R6-2-Dependency-Audit
+          path: |
+            TruthPoster_R6_2_PIP_AUDIT.json
+            TruthPoster_R6_2_PIP_AUDIT_SUMMARY.json
+            TruthPoster_R6_2_PIP_AUDIT.exit-code
+          if-no-files-found: error
+      - name: Enforce no known vulnerabilities
+        run: test "$(cat TruthPoster_R6_2_PIP_AUDIT.exit-code)" = "0"
