@@ -13,6 +13,11 @@ jobs:
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
+      - name: Restore audited Android wrapper source
+        run: |
+          base64 -d truthposter-r6-android.tar.gz.b64 > truthposter-r6-android.tar.gz
+          mkdir -p truthposter-r6-android
+          tar -xzf truthposter-r6-android.tar.gz -C truthposter-r6-android
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
