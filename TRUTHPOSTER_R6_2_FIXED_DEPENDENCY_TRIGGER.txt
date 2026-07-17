@@ -1,0 +1,1 @@
+Trigger isolated fixed dependency validation after PR creation. No bot source or credentials are present.
