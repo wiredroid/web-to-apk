@@ -1,9 +1,7 @@
 name: TruthPoster R6.2 Dependency Advisory Audit
 on:
   push:
-    branches: [truthposter-r6-2-dependency-audit]
-  pull_request:
-    branches: [master]
+    branches: [truthposter-r6-2-dependency-audit, truthposter-r6-2-fixed-dependency-audit]
   workflow_dispatch:
 permissions:
   contents: read
