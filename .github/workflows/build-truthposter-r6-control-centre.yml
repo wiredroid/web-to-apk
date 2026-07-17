@@ -18,7 +18,7 @@ jobs:
           base64 -d truthposter-r6-android.tar.gz.b64 > truthposter-r6-android.tar.gz
           mkdir -p truthposter-r6-android
           tar -xzf truthposter-r6-android.tar.gz --strip-components=1 -C truthposter-r6-android
-          sed -i "s/versionCode 60100/versionCode 60200/; s/versionName '6.1.0'/versionName '6.2.0'/" truthposter-r6-android/app/build.gradle
+          sed -E -i "s/versionCode [0-9]+/versionCode 60200/; s/versionName '[^']+'/versionName '6.2.0'/" truthposter-r6-android/app/build.gradle
           grep -q "versionCode 60200" truthposter-r6-android/app/build.gradle
           grep -q "versionName '6.2.0'" truthposter-r6-android/app/build.gradle
       - uses: actions/setup-java@v4
