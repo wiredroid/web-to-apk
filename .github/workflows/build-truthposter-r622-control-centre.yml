@@ -13,29 +13,15 @@ jobs:
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
-      - name: Restore exact Android source and preserve diagnostics
+      - name: Restore exact Android source
         run: |
-          set +e
-          {
-            wc -c truthposter-r622-android.tar.gz.b64
-            base64 -d truthposter-r622-android.tar.gz.b64 > truthposter-r622-android.tar.gz
-            echo decode_rc=$?
-            sha256sum truthposter-r622-android.tar.gz || true
-            mkdir -p truthposter-r622-android
-            tar -tzf truthposter-r622-android.tar.gz | head -40
-            tar -xzf truthposter-r622-android.tar.gz --strip-components=1 -C truthposter-r622-android
-            echo extract_rc=$?
-            find truthposter-r622-android -maxdepth 3 -type f -print | sort
-          } > restore-diagnostics.txt 2>&1
-          cat restore-diagnostics.txt
+          cat truthposter-r622-android.part1 truthposter-r622-android.part2 truthposter-r622-android.part3 > truthposter-r622-android.tar.gz.b64.complete
+          test "$(wc -c < truthposter-r622-android.tar.gz.b64.complete)" = "10900"
+          base64 -d truthposter-r622-android.tar.gz.b64.complete > truthposter-r622-android.tar.gz
+          echo "84ad7057aaf9a1709544e39ce239651f746f02f3dca7a26b2f4ff3f077ce4c7b  truthposter-r622-android.tar.gz" | sha256sum -c -
+          mkdir -p truthposter-r622-android
+          tar -xzf truthposter-r622-android.tar.gz --strip-components=1 -C truthposter-r622-android
           test -f truthposter-r622-android/settings.gradle
-      - name: Upload restore diagnostics
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: TruthPoster-R6-2-2-Restore-Diagnostics
-          path: restore-diagnostics.txt
-          if-no-files-found: error
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
