@@ -2,17 +2,18 @@ name: TruthPoster R6.2 Dependency Advisory Audit
 on:
   push:
     branches: [truthposter-r6-2-fixed-dependency-audit-default-pr]
-  pull_request:
-    branches: [master]
+    paths-ignore: [truthposter-r6-2-fixed-audit-output/**]
   workflow_dispatch:
 permissions:
-  contents: read
+  contents: write
 jobs:
   audit:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: truthposter-r6-2-fixed-dependency-audit-default-pr
       - uses: actions/setup-python@v5
         with:
           python-version: '3.13'
@@ -39,21 +40,17 @@ jobs:
           PY
       - name: Download advisory-fixed wheels for offline validation
         run: python -m pip download --only-binary=:all: --dest wheelhouse idna==3.15 pillow==12.3.0 soupsieve==2.8.4
-      - name: Upload machine-readable result
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: TruthPoster-R6-2-Dependency-Audit
-          path: |
-            TruthPoster_R6_2_PIP_AUDIT.json
-            TruthPoster_R6_2_PIP_AUDIT_SUMMARY.json
-            TruthPoster_R6_2_PIP_AUDIT.exit-code
-          if-no-files-found: error
-      - name: Upload fixed dependency wheels
-        uses: actions/upload-artifact@v4
-        with:
-          name: TruthPoster-R6-2-Fixed-Wheels
-          path: wheelhouse/*
-          if-no-files-found: error
+      - name: Publish isolated audit output to temporary branch
+        run: |
+          rm -rf truthposter-r6-2-fixed-audit-output
+          mkdir -p truthposter-r6-2-fixed-audit-output/wheels
+          cp TruthPoster_R6_2_PIP_AUDIT.json TruthPoster_R6_2_PIP_AUDIT_SUMMARY.json TruthPoster_R6_2_PIP_AUDIT.exit-code truthposter-r6-2-fixed-audit-output/
+          cp wheelhouse/* truthposter-r6-2-fixed-audit-output/wheels/
+          sha256sum truthposter-r6-2-fixed-audit-output/wheels/* > truthposter-r6-2-fixed-audit-output/WHEEL_SHA256SUMS
+          git config user.name github-actions
+          git config user.email github-actions@github.com
+          git add truthposter-r6-2-fixed-audit-output
+          git commit -m '[skip ci] Store TruthPoster R6.2 fixed dependency audit output'
+          git push origin HEAD:truthposter-r6-2-fixed-dependency-audit-default-pr
       - name: Enforce no known vulnerabilities
         run: test "$(cat TruthPoster_R6_2_PIP_AUDIT.exit-code)" = "0"
