@@ -1,0 +1,45 @@
+name: Build TruthPoster R6.2.2 Control Centre APK
+on:
+  push:
+    branches: [truthposter-r622-control-centre-apk-build]
+  pull_request:
+    branches: [master]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - name: Restore exact Android source
+        run: |
+          base64 -d truthposter-r622-android.tar.gz.b64 > truthposter-r622-android.tar.gz
+          mkdir -p truthposter-r622-android
+          tar -xzf truthposter-r622-android.tar.gz --strip-components=1 -C truthposter-r622-android
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: android-actions/setup-android@v3
+      - name: Install Android SDK packages
+        run: yes | sdkmanager --licenses >/dev/null && sdkmanager "platforms;android-35" "build-tools;35.0.0"
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.11.1'
+      - name: Build debug APK
+        working-directory: truthposter-r622-android
+        run: gradle --no-daemon :app:assembleDebug
+      - name: Verify identity and hash APK
+        run: |
+          test -s truthposter-r622-android/app/build/outputs/apk/debug/app-debug.apk
+          cp truthposter-r622-android/app/build/outputs/apk/debug/app-debug.apk TruthPoster_Control_Centre_R6_2_2_debug.apk
+          sha256sum TruthPoster_Control_Centre_R6_2_2_debug.apk | tee TruthPoster_Control_Centre_R6_2_2_debug.apk.sha256
+      - uses: actions/upload-artifact@v4
+        with:
+          name: TruthPoster-Control-Centre-R6-2-2-APK
+          path: |
+            TruthPoster_Control_Centre_R6_2_2_debug.apk
+            TruthPoster_Control_Centre_R6_2_2_debug.apk.sha256
+          if-no-files-found: error
