@@ -15,22 +15,15 @@ jobs:
       - uses: actions/checkout@v4
       - name: Restore audited Android wrapper source
         run: |
+          set -euxo pipefail
           base64 -d truthposter-r6-android.tar.gz.b64 > truthposter-r6-android.tar.gz
+          rm -rf truthposter-r6-android
           mkdir -p truthposter-r6-android
           tar -xzf truthposter-r6-android.tar.gz --strip-components=1 -C truthposter-r6-android
-          python3 - <<'PY'
-          from pathlib import Path
-          import re
-          path = Path('truthposter-r6-android/app/build.gradle')
-          text = path.read_text()
-          text, count_code = re.subn(r'versionCode\s+\d+', 'versionCode 60200', text, count=1)
-          text, count_name = re.subn(r"versionName\s+'[^']+'", "versionName '6.2.0'", text, count=1)
-          assert count_code == 1 and count_name == 1, (count_code, count_name)
-          path.write_text(text)
-          assert 'versionCode 60200' in text
-          assert "versionName '6.2.0'" in text
-          print('PASS: Android wrapper identity is 60200 / 6.2.0')
-          PY
+          python3 -c "from pathlib import Path; import re; p=Path('truthposter-r6-android/app/build.gradle'); s=p.read_text(); s,n1=re.subn(r'versionCode\\s+\\d+','versionCode 60200',s,count=1); s,n2=re.subn(r\"versionName\\s+'[^']+'\",\"versionName '6.2.0'\",s,count=1); assert (n1,n2)==(1,1),(n1,n2); p.write_text(s)"
+          grep -E "version(Code|Name)" truthposter-r6-android/app/build.gradle
+          grep -q "versionCode 60200" truthposter-r6-android/app/build.gradle
+          grep -q "versionName '6.2.0'" truthposter-r6-android/app/build.gradle
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
