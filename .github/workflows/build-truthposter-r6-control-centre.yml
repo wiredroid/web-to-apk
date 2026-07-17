@@ -1,4 +1,4 @@
-name: Build TruthPoster R6 Control Centre APK
+name: Build TruthPoster R6.2 Control Centre APK
 on:
   push:
     branches: [truthposter-r6-control-centre-apk-build]
@@ -18,6 +18,9 @@ jobs:
           base64 -d truthposter-r6-android.tar.gz.b64 > truthposter-r6-android.tar.gz
           mkdir -p truthposter-r6-android
           tar -xzf truthposter-r6-android.tar.gz --strip-components=1 -C truthposter-r6-android
+          sed -i "s/versionCode 60100/versionCode 60200/; s/versionName '6.1.0'/versionName '6.2.0'/" truthposter-r6-android/app/build.gradle
+          grep -q "versionCode 60200" truthposter-r6-android/app/build.gradle
+          grep -q "versionName '6.2.0'" truthposter-r6-android/app/build.gradle
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
@@ -40,7 +43,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: TruthPoster-R6-Gradle-Diagnostics
+          name: TruthPoster-R6-2-Gradle-Diagnostics
           path: |
             truthposter-r6-android/gradle-build.log
             truthposter-r6-android/build-exit-code.txt
@@ -49,12 +52,12 @@ jobs:
         run: |
           test "$(cat truthposter-r6-android/build-exit-code.txt)" = "0"
           test -s truthposter-r6-android/app/build/outputs/apk/debug/app-debug.apk
-          cp truthposter-r6-android/app/build/outputs/apk/debug/app-debug.apk TruthPoster_Control_Centre_R6_debug.apk
-          sha256sum TruthPoster_Control_Centre_R6_debug.apk | tee TruthPoster_Control_Centre_R6_debug.apk.sha256
+          cp truthposter-r6-android/app/build/outputs/apk/debug/app-debug.apk TruthPoster_Control_Centre_R6_2_debug.apk
+          sha256sum TruthPoster_Control_Centre_R6_2_debug.apk | tee TruthPoster_Control_Centre_R6_2_debug.apk.sha256
       - uses: actions/upload-artifact@v4
         with:
-          name: TruthPoster-Control-Centre-R6-APK
+          name: TruthPoster-Control-Centre-R6-2-APK
           path: |
-            TruthPoster_Control_Centre_R6_debug.apk
-            TruthPoster_Control_Centre_R6_debug.apk.sha256
+            TruthPoster_Control_Centre_R6_2_debug.apk
+            TruthPoster_Control_Centre_R6_2_debug.apk.sha256
           if-no-files-found: error
