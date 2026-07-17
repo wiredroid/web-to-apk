@@ -18,9 +18,19 @@ jobs:
           base64 -d truthposter-r6-android.tar.gz.b64 > truthposter-r6-android.tar.gz
           mkdir -p truthposter-r6-android
           tar -xzf truthposter-r6-android.tar.gz --strip-components=1 -C truthposter-r6-android
-          sed -E -i "s/versionCode [0-9]+/versionCode 60200/; s/versionName '[^']+'/versionName '6.2.0'/" truthposter-r6-android/app/build.gradle
-          grep -q "versionCode 60200" truthposter-r6-android/app/build.gradle
-          grep -q "versionName '6.2.0'" truthposter-r6-android/app/build.gradle
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          path = Path('truthposter-r6-android/app/build.gradle')
+          text = path.read_text()
+          text, count_code = re.subn(r'versionCode\s+\d+', 'versionCode 60200', text, count=1)
+          text, count_name = re.subn(r"versionName\s+'[^']+'", "versionName '6.2.0'", text, count=1)
+          assert count_code == 1 and count_name == 1, (count_code, count_name)
+          path.write_text(text)
+          assert 'versionCode 60200' in text
+          assert "versionName '6.2.0'" in text
+          print('PASS: Android wrapper identity is 60200 / 6.2.0')
+          PY
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
